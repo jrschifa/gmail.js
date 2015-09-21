@@ -1660,7 +1660,7 @@ var Gmail = function(localJQuery) {
   }
 
 
-  api.tools.parse_url = function(url) {
+  api.tools.parse_location = function(url) {
     var regex = /^(?:([A-Za-z]+):)?(\/{0,3})([0-9.\-A-Za-z]+)(?::(\d+))?(?:\/([^?#]*))?(?:\?([^#]*))?(?:#(.*))?$/;
     var result = regex.exec(url);
     var names = ['url', 'scheme', 'slash', 'host', 'port', 'path', 'query', 'hash'];
@@ -1698,7 +1698,7 @@ var Gmail = function(localJQuery) {
 
       if (download.length) {
         var matches = download.attr('download_url').match(/(https?:\/\/).+(:?)/);
-        if (matches[0]) return '?' + api.tools.parse_url(matches[0]).query;
+        if (matches[0]) return '?' + api.tools.parse_location(matches[0]).query;
       }
 
       return null;
