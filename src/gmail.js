@@ -1639,7 +1639,7 @@ var Gmail = function(localJQuery) {
         data.threads[x[1]].from_email = x[6];
         data.threads[x[1]].timestamp = x[7];
         data.threads[x[1]].datetime = x[24];
-        data.threads[x[1]].attachments = x[21].split(',');
+        data.threads[x[1]].attachments = api.tools.parse_attachments((x[13] != undefined) ? x[13][7] : x[21]);
         data.threads[x[1]].subject = x[12];
         data.threads[x[1]].content_html = (x[13] != undefined) ? x[13][6] : x[8];
         data.threads[x[1]].to = (x[13] != undefined) ? x[13][1] : ((x[37] != undefined) ? x[37][1]:[]);
@@ -1658,6 +1658,78 @@ var Gmail = function(localJQuery) {
 
     return data;
   }
+
+
+  api.tools.parse_url = function(url) {
+    var regex = /^(?:([A-Za-z]+):)?(\/{0,3})([0-9.\-A-Za-z]+)(?::(\d+))?(?:\/([^?#]*))?(?:\?([^#]*))?(?:#(.*))?$/;
+    var result = regex.exec(url);
+    var names = ['url', 'scheme', 'slash', 'host', 'port', 'path', 'query', 'hash'];
+    var obj = {};
+    var i;
+    for (i = 0; i < names.length; i += 1) {
+      obj[names[i]] = result[i];
+    }
+
+    return obj;
+  };
+
+
+  api.tools.parse_attachments = function(attachment_data) {
+    var links = [],
+      inline = [];
+
+    function parse_attachment(attachment, disposition) {
+      if (!window.location.origin) {
+        window.location.origin = window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '');
+      }
+
+      return {
+        name: attachment[1],
+        mime: attachment[2],
+        size: attachment[3],
+        url: window.location.origin + window.location.pathname + attachment[9],
+        disposition: disposition
+      }
+    }
+
+    function get_download_url(file) {
+      var encoded = encodeURIComponent(file),
+        download = $('[download_url*="' + encoded + '"]:first');
+
+      if (download.length) {
+        var matches = download.attr('download_url').match(/(https?:\/\/).+(:?)/);
+        if (matches[0]) return '?' + api.tools.parse_url(matches[0]).query;
+      }
+
+      return null;
+    }
+
+    if (typeof attachment_data === 'string') {
+      links = attachment_data.split(',').filter(function(attachment_name) {
+        return attachment_name;
+      }).map(function(attachment_name) {
+        var attachment = [];
+
+        attachment[1] = attachment_name;
+        attachment[9] = get_download_url(attachment_name);
+
+        return attachment;
+      });
+    } else {
+      links = attachment_data[0];
+      inline = attachment_data[4];
+    }
+
+    var parsed_links = links.map(function(attachment) {
+      return parse_attachment(attachment, 'attachment');
+    });
+
+    var parsed_inline = inline.map(function(attachment) {
+      return parse_attachment(attachment, 'inline');
+    });
+
+    return parsed_links.concat(parsed_inline);
+  };
 
 
   api.helper.get.email_data_pre = function(email_id) {
