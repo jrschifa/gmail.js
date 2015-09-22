@@ -1684,6 +1684,7 @@ var Gmail = function(localJQuery) {
       }
 
       return {
+        id: attachment[0],
         name: attachment[1],
         mime: attachment[2],
         size: attachment[3],
