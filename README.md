@@ -1,8 +1,13 @@
 # Gmail.js - JavaScript API for Gmail
 
 ![Build status](https://api.travis-ci.org/KartikTalwar/gmail.js.svg?branch=master)
+[![npm](https://img.shields.io/npm/v/gmail-js.svg)](https://www.npmjs.com/package/gmail-js)
 
-**Note:** The new Content Security Policy will prevent direct injection. **[Here](https://github.com/KartikTalwar/gmail-chrome-extension-boilerplate)** is how to get around it
+### What Gmail.js is and isn't
+
+Gmail.js is meant to be used for creating WebExtension-based browser-extensions, for Chrome, Firefox and other compatible browsers.
+
+It cannot be used server-side with Node, or from another web-app to interface with Gmail.
 
 **Note:** This is not an official Gmail API, and isn't affiliated with Google.
 
@@ -10,39 +15,35 @@
 
 ### TL;DR Summary
 
-- Lots of api methods to work with gmail. Useful for chrome extensions
-- Most of them dont take arguments, they work on what is currently visible on the screen
-- I still need to add implementation for chrome extension, works by injecting js for now
+- Lots of API methods to work with gmail. See documentation below.
+- Easy to use API. Data & DOM.
+- Reasonably complete TypeScript-support.
+- Many methods are contextual and will work with whatever is on screen when no arguments are given.
+- Obtain email data, react to event, etc. No need for OAuth!
 - Main methods allow you to observe certain events with **`gmail.observe.on('lots_of_actions_here', callback())`** or similar **`gmail.observe.before(...)`** and **`gmail.observe.after(...)`**
-- Click on a method link to view more detailed docs
-- Create an issue/pull request for feedback, requests and
-  fixes. See
-  [CONTRIBUTING.md](https://github.com/KartikTalwar/gmail.js/blob/master/CONTRIBUTING.md) for
-  more details.
-- Basic TypeScript-support from type-declarations file [gmail.d.ts](https://github.com/KartikTalwar/gmail.js/blob/master/src/gmail.d.ts).
+- Create an issue/pull request for feedback, requests and fixes. See [CONTRIBUTING.md](https://github.com/KartikTalwar/gmail.js/blob/master/CONTRIBUTING.md) for more details.
 
-### Installation
+### Using Gmail.js
 
-Since this is a chrome extension library, you can still use npm to get new changes
+If you know how to create WebExtensions-based extensions for Firefox and Chrome, you can get started by pulling Gmail.js like this:
 
 ```
 npm install gmail-js
 ```
 
+**Note:** Please ensure that Gmail.js is injected into the regular DOM.
+Gmail.js does not work as a content-script.
 
-### Examples
+For some ready to use examples/boilerplate repos, look no further:
 
-- **[Gmail Hacks](https://chrome.google.com/webstore/detail/gmail-hacks/aacloklpepaibhlikiakfcgjjappeppo)** by [@arpitnext](https://github.com/arpitnext) (*[Source](https://github.com/arpitnext/play_with_gmail.js)*)
-- **[Example to use gmail.js in firefox addon](https://github.com/rinkudas/gmail-firefox-addon-boilerplate)** - It provides basic functionality to inject gmail.js within gmail for using it in a Firefox addon.
-- **[GmailJS Node Boilerplate](https://github.com/josteink/gmailjs-node-boilerplate)** - Example for how to use GmailJS with NodeJS and script-bundling for instant load-times.
+- **[GmailJS Node Boilerplate](https://github.com/josteink/gmailjs-node-boilerplate)** - Example for how to create a browser-extension using GmailJS and modern javascript with NodeJS and script-bundling for instant load-times.
+- **[GmailJS Legacy Boilerplate](https://github.com/KartikTalwar/gmail-chrome-extension-boilerplate)** - Example for how to create a browser-extension using traditional script-loading. (Requires less tooling, but is less reliable)
 
-## Content Security Policy
+### Content Security Policy
 
+Content Security Policy (CSP) will prevent direct injection. Please see the following repository to get around the policies. More details can also be found in issue [#75](https://github.com/KartikTalwar/gmail.js/issues/75)
 
-The new Content Security Policy will prevent direct injection. Please see the following repository to get around the policies. More details can also be found in issue [#75](https://github.com/KartikTalwar/gmail.js/issues/75)
-
-#### https://github.com/KartikTalwar/gmail-chrome-extension-boilerplate
-
+See the examples linked above for how to get around that.
 
 ## Setup
 
@@ -92,6 +93,7 @@ const gmail = new GmailFactory.Gmail() as Gmail;
 - [gmail.get**.visible_emails_async(callback)**](#gmailgetvisible_emailscallback)
 - [gmail.get**.selected_emails_data()**](#gmailgetselected_emails_data)
 - [gmail.get**.current_page()**](#gmailgetcurrent_page)
+- [gmail.get**.thread_id()**](#gmailgetthread_id)
 - [gmail.get**.email_id()**](#gmailgetemail_id)
 - [gmail.get**.email_ids()**](#gmailgetemail_ids)
 - [gmail.get**.email_subject()**](#gmailgetemail_subject)
@@ -122,6 +124,8 @@ const gmail = new GmailFactory.Gmail() as Gmail;
 #### CHECK
 
 
+- [gmail.check**.is_new_data_layer()**](#gmailcheckis_new_data_layer)
+- [gmail.check**.is_new_gui()**](#gmailcheckis_new_gui)
 - [gmail.check**.is_thread()**](#gmailcheckis_thread)
 - [gmail.check**.is_inside_email()**](#gmailcheckis_inside_email)
 - [gmail.check**.is_plain_text()**](#gmailcheckis_plain_text)
@@ -207,9 +211,9 @@ gmail.observe.on("load", function(){
   - **`compose`** - When a new compose window is opened, or a message is replied to or forwarded
   - **`recipient_change`** - When an email being written (either new compose, reply or forward) has its to, cc or bcc recipients updated
   - **`view_thread`** - When a conversation thread is opened to read
-    - **`view_email`** - Sub-observer to `view_thread`. When an individual email is loaded within a conversation thread.
+  - **`view_email`* - When an individual email is loaded within a conversation thread.
       It's worth noting this event is only triggered when the email is actually rendered in the DOM. Gmail tends to cache the rendered emails, so it should not be expected to fire reliably for every viewing of the same email. It will most likely fire once, for the initial and possibly only rendering.
-    - **`load_email_menu`** - Sub-observer to `view_thread`. When the dropdown menu next to the reply button is clicked
+  - **`load_email_menu`** - When the dropdown menu next to the reply button is clicked
 - [gmail.observe**.before(action, callback)**](#gmailobservebeforeaction-callback)
 - [gmail.observe**.after(action, callback)**](#gmailobserveafteraction-callback)
 - gmail.observe**.bind(type, action, callback)** - implements the on, after, before callbacks
@@ -365,10 +369,10 @@ The data does not come from the DOM
 }]
 ```
 
-#### gmail.get.email_data(email_id=undefined)
+#### gmail.get.email_data(thread_id=undefined)
 
-Returns an object representation of the opened email contents and metadata. It takes the optional email_id parameter where
-the data for the specified id is returned instead of the email currently visible in the dom.
+Returns an object representation of the opened email contents and metadata. It takes the optional thread_id parameter where
+the data for the specified thread is returned instead of the email-thread currently visible in the dom.
 
 `thread_id` is added for updated gmail thread behaviour which adds support for emails created in [inbox](https://inbox.google.com). first_email remains as the first message in the thread.
 
@@ -560,9 +564,18 @@ Returns the opened email's subject from the DOM
 ```
 
 
+#### gmail.get.thread_id()
+
+Gets current email-thread's ID.
+
+This can be used together with `gmail.get.email_data()` to obtain
+individual email IDs.
+
+
 #### gmail.get.email_id()
 
-Gets current email's ID
+Same as `gmail.get.thread_id()`, but kept for compatibilty.
+Using this method generates a warning!
 
 ```js
 "141de25dc0b48e4f"
@@ -652,6 +665,14 @@ Although hand picked, this method returns the checks on beta features and deploy
 #### gmail.get.localization()
 
 Returns the Gmail localization, e.g. 'US'.
+
+#### gmail.check.is_new_data_layer()
+
+Returns `True` if the user is running Gmail with the new 2018 data-layer `False` otherwise
+
+#### gmail.check.is_new_gui()
+
+Returns `True` if the user is running Gmail with the new 2018 GUI `False` otherwise
 
 #### gmail.check.is_thread()
 
@@ -833,32 +854,15 @@ Your callback will be fired directly after Gmail's XMLHttpRequest has been sent 
 
 The on method also supports observering specific DOM events in the Gmail Interface (for example when a new compose window is opened). These are only available via the `on` method (not the `before` or `after` methods).
 
-Some actions/observers also have defined 'sub-observers' which only (!) become available if you have an action bound to the parent observer. Sub-observers are defined as such because they only make sense once the parent has been triggered. I.e. for an individual email (or several emails) to display as part of a conversation thread, the thread must first be opened/loaded in the interface.
-
-Example usage:
-
-```js
-gmail.observe.on('view_thread', function(obj) {
-  console.log('view_thread', obj);
-});
-
-// now we have access to the sub observers
-and load_email_menu
-gmail.observe.on('view_email', function(obj) {
-  console.log('view_email', obj);
-});
-```
-
-**Available DOM Actions/Observers & Sub-observers**
+**Available DOM Actions/Observers**
 
  - **load** - When the gmail interface has completed loading
  - **compose** - When a new compose window opens, or a message is replied to or forwarded
  - **compose_cancelled** - When an existing compose window is closed.
  - **recipient_change** - When the recipient (to, cc or bcc) is changed when composing a new email or replying/forwarding an email
  - **view_thread** - When a new coversation thread is opened
-  - **view_thread Sub-observers**
-  - **view_email** - When an individual email is loaded within a thread (also fires when thread loads displaying the latest email)
-  - **load_email_menu** - When the dropdown menu next to the reply button is clicked
+ - **view_email** - When an individual email is loaded within a thread (also fires when thread loads displaying the latest email)
+ - **load_email_menu** - When the dropdown menu next to the reply button is clicked
 
 ```js
 gmail.observe.on("http_event", function(params) {
@@ -1086,7 +1090,7 @@ gmail.observe.off(null,'before'); // disables all before observers
 gmail.observe.off();  // disables all
 ```
 
-#### gmail.observe.register(action, class/args, parent=null)
+#### gmail.observe.register(action, class/args)
 
 Allow an application to register a custom DOM observer specific to their application.
 Adds it to the configured DOM observers that will then be supported by the dom insertion observer.
@@ -1098,7 +1102,6 @@ This method can be called two different ways:
 Simple:
   - action - the name of the new DOM observer
   - class - the class of an inserted DOM element that identifies that this action should be triggered
-  - parent - optional - if specified, this observer will be registered as a sub_observer for the specified parent (meaning it will only be checked for if the parent observer has something bound to it, and has been triggered).
 
 Complex:
   - action - the name of the new DOM observer
@@ -1107,7 +1110,6 @@ Complex:
     - selector - if you need to match more than just the className of a specific element to indicate a match, you can use this selector for further checking (uses element.is(selector) on matched element). E.g. if there are multiple elements with a class indicating an observer should fire, but you only want it to fire on a specific id, then you would use this
     - sub_selector - if specified, we do a jquery element.find for the passed selector on the inserted element and ensure we can find a match
     - handler - if specified this handler is called if a match is found. Otherwise default calls the callback & passes the jQuery matchElement
-  - parent - optional - as above with simple
 
 ```js
 
